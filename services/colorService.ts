@@ -1,8 +1,9 @@
 
 import type { Settings, HueStats } from '../types';
-import { ComputationMode, DominantColorStrategy } from '../types';
 
-const DOWNSAMPLE_DIMENSION = 128;
+const DOWNSAMPLE_DIMENSION = 200; // Balanced for speed and accuracy
+const MIN_CHROMA_THRESHOLD = 8; // Fixed threshold in LCH space
+const SAMPLE_SIZE = 500; // Limit pixels for consistent performance
 
 // --- Main Image Processing Function ---
 
@@ -53,128 +54,142 @@ function getDownsampledPixels(img: HTMLImageElement): Uint8ClampedArray {
 }
 
 function calculateHueStats(pixels: Uint8ClampedArray, settings: Settings): HueStats {
-  let relevantPixels: number[][] = [];
-  const converter = settings.mode === ComputationMode.Fast ? rgbToHsv : rgbToLab;
+  // Single robust algorithm - no user choices needed
+  const dominantColor = findDominantColorIntelligent(pixels);
+  
+  if (!dominantColor) {
+    // Grayscale or very low chroma image
+    const avgLightness = calculateAverageLightness(pixels);
+    return { 
+      hue: 0, 
+      chroma: 0, 
+      lightness: avgLightness, 
+      confidence: 0.1 
+    };
+  }
 
+  // Convert to perceptual LCH color space
+  const lab = rgbToLab(dominantColor.r, dominantColor.g, dominantColor.b);
+  const [l, c, h] = labToLch(lab[0], lab[1], lab[2]);
+  
+  return {
+    hue: h,
+    chroma: Math.min(c / 100, 1), // Normalize chroma to 0-1
+    lightness: l / 100, // Normalize lightness to 0-1
+    confidence: dominantColor.confidence
+  };
+}
+
+interface ColorCandidate {
+  r: number;
+  g: number;
+  b: number;
+  hue: number;
+  chroma: number;
+  lightness: number;
+  weight: number;
+  confidence: number;
+}
+
+function findDominantColorIntelligent(pixels: Uint8ClampedArray): ColorCandidate | null {
+  // Simple, robust approach: analyze all pixels and find the most common hue
+  const coloredPixels: { r: number, g: number, b: number, hue: number, chroma: number, lightness: number }[] = [];
+  
+  // Extract all colored pixels
   for (let i = 0; i < pixels.length; i += 4) {
+    const a = pixels[i + 3];
+    if (a < 128) continue; // Skip transparent pixels
+    
     const r = pixels[i];
     const g = pixels[i + 1];
     const b = pixels[i + 2];
-    const a = pixels[i + 3];
-
-    if (a < 128) continue; // Skip transparent pixels
-
-    const color = converter(r, g, b);
     
-    // In HSV, the 2nd value is Saturation. In LAB->LCH, it's Chroma. Both are at index 1.
-    const chromaOrSat = (settings.mode === ComputationMode.Fast) ? color[1] : labToLch(color[0], color[1], color[2])[1];
-    if(chromaOrSat > settings.ignoreThreshold) {
-      relevantPixels.push([r, g, b]);
-    }
-  }
-
-  if (relevantPixels.length === 0) { // All pixels were ignored (e.g., grayscale image)
-    const avgLightness = getAverageLightness(pixels);
-    return { hue: 0, chroma: 0, lightness: avgLightness };
-  }
-  
-  let dominantRgb: number[];
-  if (settings.strategy === DominantColorStrategy.Kmeans) {
-      dominantRgb = kmeans(relevantPixels, 5);
-  } else { // Average
-      dominantRgb = getAverageRgb(relevantPixels);
-  }
-  
-  if (settings.mode === ComputationMode.Fast) { // HSV
-    const [h, s, v] = rgbToHsv(dominantRgb[0], dominantRgb[1], dominantRgb[2]);
-    return { hue: h, chroma: s, lightness: v };
-  } else { // Perceptual LCH
-    const lab = rgbToLab(dominantRgb[0], dominantRgb[1], dominantRgb[2]);
+    // Convert to LCH for perceptual analysis
+    const lab = rgbToLab(r, g, b);
     const [l, c, h] = labToLch(lab[0], lab[1], lab[2]);
-    return { hue: h, chroma: c / 128, lightness: l / 100 }; // Normalize chroma/lightness
-  }
-}
-
-function getAverageLightness(pixels: Uint8ClampedArray): number {
-    let totalLightness = 0;
-    let count = 0;
-    for (let i = 0; i < pixels.length; i += 4) {
-        if (pixels[i+3] < 128) continue;
-        const [h,s,v] = rgbToHsv(pixels[i], pixels[i+1], pixels[i+2]);
-        totalLightness += v;
-        count++;
+    
+    // Only consider pixels with sufficient chroma (avoid grays)
+    if (c > MIN_CHROMA_THRESHOLD) {
+      coloredPixels.push({ r, g, b, hue: h, chroma: c, lightness: l });
     }
-    return count > 0 ? totalLightness / count : 0.5;
+  }
+  
+  if (coloredPixels.length === 0) {
+    return null; // No colored pixels found
+  }
+  
+  // Find the most frequent hue range
+  const hueHistogram: { [key: number]: { pixels: typeof coloredPixels, totalChroma: number } } = {};
+  const HUE_BIN_SIZE = 20; // 20-degree bins for stability
+  
+  for (const pixel of coloredPixels) {
+    const binIndex = Math.floor(pixel.hue / HUE_BIN_SIZE);
+    
+    if (!hueHistogram[binIndex]) {
+      hueHistogram[binIndex] = { pixels: [], totalChroma: 0 };
+    }
+    
+    hueHistogram[binIndex].pixels.push(pixel);
+    hueHistogram[binIndex].totalChroma += pixel.chroma;
+  }
+  
+  // Find the bin with the highest chroma-weighted count
+  let dominantBin = 0;
+  let maxScore = 0;
+  
+  for (const [binIndex, data] of Object.entries(hueHistogram)) {
+    // Score = pixel count * average chroma (prioritizes both frequency and saturation)
+    const score = data.pixels.length * (data.totalChroma / data.pixels.length);
+    if (score > maxScore) {
+      maxScore = score;
+      dominantBin = parseInt(binIndex);
+    }
+  }
+  
+  // Calculate the average color from the dominant bin
+  const dominantPixels = hueHistogram[dominantBin].pixels;
+  const avgR = Math.round(dominantPixels.reduce((sum, p) => sum + p.r, 0) / dominantPixels.length);
+  const avgG = Math.round(dominantPixels.reduce((sum, p) => sum + p.g, 0) / dominantPixels.length);
+  const avgB = Math.round(dominantPixels.reduce((sum, p) => sum + p.b, 0) / dominantPixels.length);
+  
+  // Recalculate LCH for the average color
+  const avgLab = rgbToLab(avgR, avgG, avgB);
+  const [avgL, avgC, avgH] = labToLch(avgLab[0], avgLab[1], avgLab[2]);
+  
+  // Calculate confidence based on how dominant this hue is
+  const confidence = Math.min(1, dominantPixels.length / coloredPixels.length * 2);
+  
+  return {
+    r: avgR,
+    g: avgG,
+    b: avgB,
+    hue: avgH,
+    chroma: avgC,
+    lightness: avgL,
+    weight: dominantPixels.length,
+    confidence
+  };
 }
 
 
-// --- K-Means Implementation ---
-function kmeans(pixels: number[][], k: number): number[] {
-  if (pixels.length < k) {
-    return getAverageRgb(pixels);
-  }
 
-  let centroids: number[][] = [];
-  for (let i = 0; i < k; i++) {
-    centroids.push(pixels[Math.floor(Math.random() * pixels.length)]);
+function calculateAverageLightness(pixels: Uint8ClampedArray): number {
+  let totalLightness = 0;
+  let count = 0;
+  
+  for (let i = 0; i < pixels.length; i += 4) {
+    if (pixels[i + 3] < 128) continue;
+    
+    const lab = rgbToLab(pixels[i], pixels[i + 1], pixels[i + 2]);
+    totalLightness += lab[0];
+    count++;
   }
-
-  let clusters: number[][][] = [];
-  for(let iter = 0; iter < 10; iter++) { // 10 iterations are usually enough
-      clusters = Array.from({ length: k }, () => []);
-      for (const pixel of pixels) {
-          let minDist = Infinity;
-          let clusterIndex = 0;
-          for (let i = 0; i < k; i++) {
-              const dist = colorDistance(pixel, centroids[i]);
-              if (dist < minDist) {
-                  minDist = dist;
-                  clusterIndex = i;
-              }
-          }
-          clusters[clusterIndex].push(pixel);
-      }
-      
-      for (let i = 0; i < k; i++) {
-          if (clusters[i].length > 0) {
-              centroids[i] = getAverageRgb(clusters[i]);
-          }
-      }
-  }
-
-  // Find largest cluster
-  let largestClusterIndex = 0;
-  for (let i = 1; i < k; i++) {
-      if (clusters[i].length > clusters[largestClusterIndex].length) {
-          largestClusterIndex = i;
-      }
-  }
-
-  return centroids[largestClusterIndex];
+  
+  return count > 0 ? totalLightness / count / 100 : 0.5;
 }
 
-function colorDistance(c1: number[], c2: number[]): number {
-  return Math.sqrt(
-      Math.pow(c1[0] - c2[0], 2) +
-      Math.pow(c1[1] - c2[1], 2) +
-      Math.pow(c1[2] - c2[2], 2)
-  );
-}
 
-function getAverageRgb(pixels: number[][]): number[] {
-  const sum = pixels.reduce((acc, pixel) => {
-    acc[0] += pixel[0];
-    acc[1] += pixel[1];
-    acc[2] += pixel[2];
-    return acc;
-  }, [0, 0, 0]);
 
-  return [
-    Math.round(sum[0] / pixels.length),
-    Math.round(sum[1] / pixels.length),
-    Math.round(sum[2] / pixels.length)
-  ];
-}
 
 
 // --- Color Space Conversions ---

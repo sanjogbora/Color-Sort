@@ -12,7 +12,11 @@ export const useImageProcessor = () => {
     setIsProcessing(true);
     setProgress({ current: 0, total: files.length });
     
-    const imagePromises = files.map(async (file, index) => {
+    const processedImages: ImageFile[] = [];
+    
+    // Process images sequentially for real-time progress updates
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
       const id = `${file.name}-${file.size}-${file.lastModified}`;
       const imageFile: ImageFile = {
         id,
@@ -29,24 +33,37 @@ export const useImageProcessor = () => {
         imageFile.error = (error instanceof Error) ? error.message : 'Unknown error';
       }
       
-      setProgress(prev => ({ ...prev, current: prev.current + 1 }));
-      return imageFile;
-    });
-
-    const processedImages = await Promise.all(imagePromises);
+      processedImages.push(imageFile);
+      
+      // Update progress after each image
+      setProgress({ current: index + 1, total: files.length });
+      
+      // Small delay to ensure UI updates
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
 
     const sortedImages = processedImages
       .filter(img => img.hueStats)
       .sort((a, b) => {
         const statsA = a.hueStats!;
         const statsB = b.hueStats!;
-        if (statsA.hue !== statsB.hue) {
-          return statsA.hue - statsB.hue;
+        
+        // STRICT hue-only sorting - no tolerance, no overrides
+        const hueA = statsA.hue;
+        const hueB = statsB.hue;
+        
+        // Simple linear hue sort (0° to 360°)
+        if (Math.abs(hueA - hueB) > 0.1) {
+          return hueA - hueB;
         }
-        if (statsA.chroma !== statsB.chroma) {
+        
+        // Only if hues are virtually identical, then sort by saturation
+        if (Math.abs(statsA.chroma - statsB.chroma) > 0.01) {
           return statsB.chroma - statsA.chroma; // Higher chroma first
         }
-        return statsB.lightness - statsA.lightness; // Higher lightness first
+        
+        // Finally by lightness
+        return statsB.lightness - statsA.lightness;
       });
     
     const namedImages = generateNewNames(sortedImages, settings.template);
@@ -56,6 +73,8 @@ export const useImageProcessor = () => {
     setImages([...namedImages, ...erroredImages]);
     setIsProcessing(false);
   }, []);
+
+
 
   const generateNewNames = (sortedImages: ImageFile[], template: string): ImageFile[] => {
     return sortedImages.map((image, index) => {
@@ -89,5 +108,28 @@ export const useImageProcessor = () => {
     });
   };
 
-  return { images, isProcessing, progress, processImages };
+  const reorderImages = useCallback((fromIndex: number, toIndex: number) => {
+    setImages(prevImages => {
+      const newImages = [...prevImages];
+      const [movedImage] = newImages.splice(fromIndex, 1);
+      newImages.splice(toIndex, 0, movedImage);
+      
+      // Regenerate names with new order
+      const renamedImages = newImages.map((image, index) => {
+        if (!image.hueStats) return image;
+        
+        const basename = image.originalName.substring(0, image.originalName.lastIndexOf('.'));
+        const ext = image.originalName.substring(image.originalName.lastIndexOf('.'));
+        
+        // Use simple template for reordering
+        const newName = `${index + 1}_${basename}${ext}`;
+        
+        return { ...image, newName };
+      });
+      
+      return renamedImages;
+    });
+  }, []);
+
+  return { images, isProcessing, progress, processImages, reorderImages };
 };

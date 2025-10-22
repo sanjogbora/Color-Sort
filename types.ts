@@ -1,25 +1,17 @@
 
-export enum ComputationMode {
-  Fast = 'FAST_HSV',
-  Perceptual = 'PERCEPTUAL_LCH',
-}
-
-export enum DominantColorStrategy {
-  Average = 'AVERAGE',
-  Kmeans = 'KMEANS',
-}
-
 export interface Settings {
-  mode: ComputationMode;
-  strategy: DominantColorStrategy;
   template: string;
-  ignoreThreshold: number; // 0-1, for saturation/chroma
+}
+
+export interface GifExportSettings {
+  duration: number; // milliseconds per frame
 }
 
 export interface HueStats {
   hue: number; // 0-359
-  chroma: number; // 0-1
-  lightness: number; // 0-1
+  chroma: number; // 0-1, normalized
+  lightness: number; // 0-1, normalized
+  confidence: number; // 0-1, how confident we are in this color
 }
 
 export interface ImageFile {

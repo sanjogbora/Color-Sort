@@ -7,18 +7,14 @@ import { HueHistogram } from './components/HueHistogram';
 import { useImageProcessor } from './hooks/useImageProcessor';
 import { AppLogo } from './components/Icons';
 import type { Settings } from './types';
-import { ComputationMode, DominantColorStrategy } from './types';
 
 export default function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [settings, setSettings] = useState<Settings>({
-    mode: ComputationMode.Fast,
-    strategy: DominantColorStrategy.Average,
-    template: '{index:04}_{hue:03}_{basename}',
-    ignoreThreshold: 0.05,
+    template: '{index}_{basename}',
   });
 
-  const { images, isProcessing, progress, processImages } = useImageProcessor();
+  const { images, isProcessing, progress, processImages, reorderImages } = useImageProcessor();
 
   const handleFilesAdded = useCallback((newFiles: File[]) => {
     const uniqueNewFiles = newFiles.filter(
@@ -72,10 +68,15 @@ export default function App() {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-semibold text-white">Image Preview ({images.length > 0 ? images.length : files.length} files)</h2>
                   {hasProcessedImages && (
-                     <p className="text-sm text-slate-400">Sorted by Hue</p>
+                    <p className="text-sm text-slate-400">Sorted by Hue</p>
                   )}
                 </div>
-                 <ImageGrid images={images} initialFiles={files} />
+                <ImageGrid
+                  images={images}
+                  initialFiles={files}
+                  onReorder={reorderImages}
+                  canReorder={images.length > 0}
+                />
               </div>
             )}
           </div>
