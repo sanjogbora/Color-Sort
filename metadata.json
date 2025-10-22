@@ -1,0 +1,5 @@
+{
+  "name": "HueSort Image Organizer",
+  "description": "A web-based tool to sort and rename images based on their dominant color hue. Import your images, choose a processing method, and export them with new, organized filenames.",
+  "requestFramePermissions": []
+}
