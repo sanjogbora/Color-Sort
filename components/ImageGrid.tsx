@@ -8,13 +8,15 @@ interface ImageGridProps {
   initialFiles: File[];
   onReorder?: (fromIndex: number, toIndex: number) => void;
   canReorder?: boolean;
+  onAddMore?: (files: File[]) => void;
 }
 
 export const ImageGrid: React.FC<ImageGridProps> = ({ 
   images, 
   initialFiles, 
   onReorder, 
-  canReorder = false 
+  canReorder = false,
+  onAddMore
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -90,6 +92,7 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
             onDragEnd={handleDragEnd}
           />
         ))}
+        {onAddMore && <AddMoreCard onAddMore={onAddMore} />}
       </div>
     </div>
   );
@@ -171,14 +174,42 @@ const ImageCard: React.FC<ImageCardProps> = ({
           <p className="text-xs font-semibold">Processing Failed</p>
         </div>
       )}
-      
-      {canReorder && (
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-900/90 text-white text-xs px-2 py-1 rounded">
-            Drag to reorder
-          </div>
-        </div>
-      )}
     </div>
+  );
+};
+
+interface AddMoreCardProps {
+  onAddMore: (files: File[]) => void;
+}
+
+const AddMoreCard: React.FC<AddMoreCardProps> = ({ onAddMore }) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      onAddMore(files);
+    }
+    // Reset input so same files can be selected again
+    e.target.value = '';
+  };
+
+  return (
+    <label className="group relative aspect-square bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-600 hover:border-sky-500 transition-all cursor-pointer flex flex-col items-center justify-center hover:scale-105">
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      <div className="text-center p-4">
+        <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-sky-600 transition-colors">
+          <svg className="w-6 h-6 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+        <p className="text-sm font-semibold text-slate-300 group-hover:text-sky-400 transition-colors">Add More</p>
+        <p className="text-xs text-slate-500 mt-1">Click to upload</p>
+      </div>
+    </label>
   );
 };

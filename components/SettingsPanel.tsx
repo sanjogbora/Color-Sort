@@ -2,6 +2,7 @@
 import React, { useCallback, useState } from 'react';
 import JSZip from 'jszip';
 import type { Settings, Progress, ImageFile, GifExportSettings } from '../types';
+import { ColorAnalysisMode } from '../types';
 import { createGifFromImages, downloadGif } from '../services/gifExportService';
 import { ProcessIcon, ExportIcon, HelpIcon } from './Icons';
 
@@ -75,11 +76,36 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-        <h3 className="font-semibold text-slate-200 mb-2">Intelligent Color Sorting</h3>
-        <p className="text-sm text-slate-400">
-          Using advanced perceptual color analysis for world-class accuracy. 
-          No configuration needed - just process your images!
+      <div className="space-y-3">
+        <label className="font-semibold text-slate-200 block">Analysis Mode</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onSettingsChange({ ...settings, analysisMode: ColorAnalysisMode.Math })}
+            className={`p-3 text-left rounded-lg border-2 transition-all ${
+              settings.analysisMode === ColorAnalysisMode.Math
+                ? 'bg-sky-900/50 border-sky-500'
+                : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+            }`}
+          >
+            <span className="font-semibold text-sm text-white block">Math</span>
+            <span className="text-xs text-slate-400">Simple histogram</span>
+          </button>
+          <button
+            onClick={() => onSettingsChange({ ...settings, analysisMode: ColorAnalysisMode.Visual })}
+            className={`p-3 text-left rounded-lg border-2 transition-all ${
+              settings.analysisMode === ColorAnalysisMode.Visual
+                ? 'bg-sky-900/50 border-sky-500'
+                : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+            }`}
+          >
+            <span className="font-semibold text-sm text-white block">Visual</span>
+            <span className="text-xs text-slate-400">Perceptual weighting</span>
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">
+          {settings.analysisMode === ColorAnalysisMode.Math 
+            ? 'Fast pixel counting - good for most images'
+            : 'Smart weighting - better for grey backgrounds & text'}
         </p>
       </div>
 

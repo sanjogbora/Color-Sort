@@ -1,6 +1,12 @@
 
+export enum ColorAnalysisMode {
+  Math = 'MATH',
+  Visual = 'VISUAL',
+}
+
 export interface Settings {
   template: string;
+  analysisMode: ColorAnalysisMode;
 }
 
 export interface GifExportSettings {

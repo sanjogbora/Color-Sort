@@ -8,11 +8,13 @@ import { HueHistogram } from './components/HueHistogram';
 import { useImageProcessor } from './hooks/useImageProcessor';
 import { AppLogo } from './components/Icons';
 import type { Settings } from './types';
+import { ColorAnalysisMode } from './types';
 
 export default function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [settings, setSettings] = useState<Settings>({
     template: '{index}_{basename}',
+    analysisMode: ColorAnalysisMode.Visual,
   });
 
   const { images, isProcessing, progress, processImages, reorderImages } = useImageProcessor();
@@ -79,6 +81,7 @@ export default function App() {
                     initialFiles={files}
                     onReorder={reorderImages}
                     canReorder={images.length > 0}
+                    onAddMore={handleFilesAdded}
                   />
                 </div>
               )}
