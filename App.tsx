@@ -46,7 +46,7 @@ export default function App() {
             <header className="flex items-center gap-3">
               <AppLogo />
               <div>
-                <h1 className="text-xl font-bold text-white">HueSort</h1>
+                <h1 className="text-xl font-bold text-white font-serif">HueSort</h1>
                 <p className="text-sm text-slate-400">Image Organizer</p>
               </div>
             </header>
@@ -71,7 +71,7 @@ export default function App() {
               ) : (
                 <div>
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-semibold text-white">Image Preview ({images.length > 0 ? images.length : files.length} files)</h2>
+                    <h2 className="text-2xl font-semibold text-white font-serif">Image Preview ({images.length > 0 ? images.length : files.length} files)</h2>
                     {hasProcessedImages && (
                       <p className="text-sm text-slate-400">Sorted by Hue</p>
                     )}

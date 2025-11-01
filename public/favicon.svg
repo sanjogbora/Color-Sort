@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="favicon-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="50%" stop-color="#ec4899" />
+            <stop offset="50%" stop-color="#fbbf24" />
+        </linearGradient>
+    </defs>
+    <!-- Equilateral triangle pointing up -->
+    <path 
+        d="M32 10 L56 52 L8 52 Z" 
+        fill="url(#favicon-gradient)" 
+        stroke="#1e293b" 
+        stroke-width="2"
+    />
+</svg>

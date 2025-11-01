@@ -77,7 +77,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <label className="font-semibold text-slate-200 block">Analysis Mode</label>
+        <label className="font-semibold text-white block font-serif">Analysis Mode</label>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onSettingsChange({ ...settings, analysisMode: ColorAnalysisMode.Math })}
@@ -110,7 +110,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       </div>
 
       <div className="space-y-3">
-        <label htmlFor="template" className="font-semibold text-slate-200 flex items-center gap-2">
+        <label htmlFor="template" className="font-semibold text-white flex items-center gap-2 font-serif">
           Filename Format
           <div className="group relative">
             <HelpIcon className="w-4 h-4 text-slate-500" />
@@ -130,7 +130,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             id="template"
             value={settings.template}
             onChange={(e) => onSettingsChange({ ...settings, template: e.target.value })}
-            className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-slate-200 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+            className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
             placeholder="e.g., {index}_{basename}"
           />
           <div className="flex gap-2">
@@ -153,11 +153,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {processedImages.length > 0 && (
         <div className="space-y-3 border-t border-slate-700 pt-4">
           <div>
-            <label className="text-sm font-medium text-slate-300 block mb-2">GIF Animation Speed</label>
+            <label className="text-sm font-semibold text-white block mb-2 font-serif">GIF Animation Speed</label>
             <select
               value={gifSettings.duration}
               onChange={(e) => setGifSettings({...gifSettings, duration: parseInt(e.target.value)})}
-              className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-slate-200 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             >
               <option value={200}>Fast (0.2s per image)</option>
               <option value={500}>Normal (0.5s per image)</option>

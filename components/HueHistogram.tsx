@@ -33,11 +33,11 @@ export const HueHistogram: React.FC<HueHistogramProps> = ({ images }) => {
 
   return (
     <div className="w-full h-48 mt-auto">
-        <h3 className="text-sm font-semibold text-slate-300 mb-2 text-center">Hue Distribution</h3>
+        <h3 className="text-sm font-semibold text-white mb-2 text-center font-serif">Hue Distribution</h3>
         <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} tickLine={false} interval={5} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} tickLine={false} />
+                <XAxis dataKey="name" tick={{ fill: '#e2e8f0', fontSize: 11, fontWeight: 600 }} axisLine={{ stroke: '#475569' }} tickLine={false} interval={5} />
+                <YAxis tick={{ fill: '#e2e8f0', fontSize: 11, fontWeight: 600 }} axisLine={{ stroke: '#475569' }} tickLine={false} />
                 <Tooltip
                     contentStyle={{
                         backgroundColor: '#1e293b',
@@ -45,7 +45,7 @@ export const HueHistogram: React.FC<HueHistogramProps> = ({ images }) => {
                         borderRadius: '0.5rem',
                         fontSize: '0.875rem'
                     }}
-                    labelStyle={{ color: '#cbd5e1' }}
+                    labelStyle={{ color: '#f1f5f9', fontWeight: 600 }}
                     itemStyle={{ fontWeight: 'bold' }}
                     cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
                 />

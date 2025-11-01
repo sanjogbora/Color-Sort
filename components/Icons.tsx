@@ -3,15 +3,20 @@ import React from 'react';
 
 export const AppLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        {/* Half pink, half yellow triangle */}
         <defs>
-            <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#22d3ee"/>
-            <stop offset="100%" stopColor="#0ea5e9"/>
+            <linearGradient id="triangle-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="50%" stopColor="#ec4899" />
+                <stop offset="50%" stopColor="#fbbf24" />
             </linearGradient>
         </defs>
-        <path d="M20 4C11.1634 4 4 11.1634 4 20C4 28.8366 11.1634 36 20 36C28.8366 36 36 28.8366 36 20C36 11.1634 28.8366 4 20 4Z" fill="url(#logo-gradient)"/>
-        <path d="M20 6C12.268 6 6 12.268 6 20C6 27.732 12.268 34 20 34V6Z" fill="#1e293b" fillOpacity="0.3"/>
-        <path fillRule="evenodd" clipRule="evenodd" d="M20 18C21.1046 18 22 17.1046 22 16C22 14.8954 21.1046 14 20 14C18.8954 14 18 14.8954 18 16C18 17.1046 18.8954 18 20 18ZM20 20C17.7909 20 16 21.7909 16 24C16 26.2091 17.7909 28 20 28C22.2091 28 24 26.2091 24 24C24 21.7909 22.2091 20 20 20Z" fill="white"/>
+        {/* Equilateral triangle pointing up */}
+        <path 
+            d="M20 6 L35 32 L5 32 Z" 
+            fill="url(#triangle-gradient)" 
+            stroke="#1e293b" 
+            strokeWidth="1.5"
+        />
     </svg>
 );
 
